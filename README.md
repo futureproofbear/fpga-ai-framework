@@ -45,6 +45,40 @@ is deliberately **not** a tier here — board-specific pinouts/bring-up facts be
 *application* repo, since a board isn't reusable across projects the way a chip family or a
 toolchain is.
 
+## What's in it today
+
+**Design side** (write it right the first time):
+- `rules/generic/hdl-style.md` — synthesis/simulation agreement, reset discipline, state machines,
+  parameterization, handshake contracts.
+- `rules/generic/cdc-guidelines.md` — the four crossing types and the correct structure for each;
+  why a timing PASS is not a CDC proof.
+- `rules/generic/timing-closure-basics.md` — the build gate, how gates fail silently, reading a
+  failing path before changing anything.
+- `.claude/agents/generic-rtl-architect.md`, `.claude/agents/generic-tb-specialist.md` — the
+  authoring personas.
+- `.claude/skills/cdc-checker/` — the CDC audit workflow.
+
+**Verification / debug side** (find out what actually happened):
+- `rules/generic/{reference-first-verification,value-level-verification,hls-output-distrust,
+  kernel-isolation-testing}.md` and their paired skills.
+- `.claude/agents/{architectural-critic,fpga-ref-verifier,ingestion-triage,synthesis-repair,
+  doc-accuracy}.md`.
+
+**OEM tier** — `rules/oem/amd_vivado/` + `.claude/agents/vivado-*` + `.claude/skills/{vivado-*,
+vitis-hls-kernel-authoring}/`; `rules/oem/microchip_libero/` + `.claude/agents/{libero-build,
+microchip-*}` + `.claude/skills/{smarthls-kernel-authoring,smartdebug-active-probe,
+microchip-iso-test-harness,flashpro6-jtag-recovery}/`.
+
+**Chip-family tier** — `rules/target/amd/kintex_ultrascale/`,
+`rules/target/microchip/polarfire_mpfs250t/`.
+
+**Maintenance** — `.claude/agents/framework-curator.md` sweeps a consuming project for reusable
+findings that weren't captured in the moment, classifies them against the tier rules below, and
+writes the accepted ones in.
+
+**Project workflow** — the `openspec-*` skills and `/opsx:*` commands (generic spec-driven change
+management; requires the separate `openspec` CLI).
+
 ## Using this in an application repo
 
 ```bash
