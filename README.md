@@ -57,10 +57,16 @@ toolchain is.
 - `.claude/agents/generic-rtl-architect.md`, `.claude/agents/generic-tb-specialist.md` — the
   authoring personas.
 - `.claude/skills/cdc-checker/` — the CDC audit workflow.
+- `rules/generic/fs4-fast-iq.md` — at an IF of exactly fs/4 the down-converter needs no multiplier
+  AND the filter's imaginary path collapses to a shift. The second saving is the one routinely
+  missed; finding it cut one real design from 172 to 44 DSP, bit-exact.
 
 **Verification / debug side** (find out what actually happened):
 - `rules/generic/{reference-first-verification,value-level-verification,hls-output-distrust,
   kernel-isolation-testing}.md` and their paired skills.
+- `rules/generic/measurement-validity.md` — a measurement must be able to FAIL before you may
+  believe it passed: dead parameter knobs, designs optimised away, comparison against the wrong
+  reference, saturated metrics that read as perfect results.
 - `.claude/agents/{architectural-critic,fpga-ref-verifier,ingestion-triage,synthesis-repair,
   doc-accuracy}.md`.
 

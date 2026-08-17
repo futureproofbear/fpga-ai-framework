@@ -62,6 +62,56 @@ assuming RTL/firmware is wrong.
   script's own progress markers. (Killing a synthesis/implementation run is safe — no board or JTAG
   cable is involved. Killing a `program_hw_devices` is NOT; see `vivado-jtag-recovery`.)
 
+## `synth_design` parameter overrides and `$readmemh`
+
+- **`-generic` only binds to parameters declared on the TOP module.** A
+  parameter declared on a submodule and not plumbed up through the top is
+  silently ignored — no warning, no error, and every configuration in a sweep
+  then synthesises identically. That result is indistinguishable from a genuine
+  "this parameter makes no difference" finding. **Confirm the binding in the
+  synthesis log** (`Parameter <NAME> bound to: <value>`) before believing a
+  parameter sweep. See `rules/generic/measurement-validity.md`.
+- **`$readmemh` in synthesis resolves relative to the tool's search path, not
+  the source file.** Pass `-include_dirs <dir>` to `synth_design` (or use an
+  absolute path in the RTL). When the file is not found, synthesis does **not**
+  fail — the memory initialises to X, constant propagation folds the datapath
+  away, and the design synthesises to near-zero resources. A resource report of
+  0 DSP / 0 LUT for a real datapath means this, not an efficient design.
+
+## IP configuration limits are validated, and they bite late
+
+- IP parameters are range-checked at `set_property` time, so an unbuildable
+  configuration is rejected with a clear error — but only once you attempt it.
+  Read the limits out of the product guide *before* designing around an IP.
+  Concrete example hit here: **FIR Compiler (PG149) caps Input Sampling
+  Frequency at 371 MHz**, which rules out super-sample-rate configurations above
+  that regardless of how many parallel paths the device could support:
+  ```
+  ERROR: [IP_Flow 19-3488] Validation failed for parameter
+  'Input Sampling Frequency (MHz)(Sample_Frequency)' ...
+  Value '1440' is out of the range (0.000001,371.0)
+  ```
+- **An IP cannot exploit structure it has not been told about.** A generic FIR
+  fed complex data filters both components fully; it has no way to know that one
+  component is identically zero by construction (e.g. after an fs/4 mixer, where
+  even samples are purely real and odd purely imaginary). Structural savings that
+  depend on knowing *why* the data looks the way it does have to be expressed by
+  the integrator — either by restructuring what is handed to the IP, or by
+  implementing that stage directly.
+
+## XPM for clock-domain-crossing structures
+
+- Prefer `xpm_fifo_async` / `xpm_cdc_*` over a hand-written Gray-pointer FIFO or
+  synchroniser. A CDC structure is the case where a hand-rolled implementation
+  fails *subtly*: a missing synchroniser stage or a non-Gray-coded pointer
+  produces a design that simulates clean, meets timing, and corrupts data
+  intermittently on hardware. The XPM macros carry the synchronisers and their
+  constraints with them.
+- Simulating an XPM design needs the library and the global module:
+  `xelab <top> glbl -L xpm` (compile `<install>/data/verilog/src/glbl.v` first).
+  Without `glbl` elaboration fails with `'glbl' is not declared` pointing into
+  the XPM source, which reads as an XPM bug and is not one.
+
 ## Asking what a part actually contains
 
 - **Resource counts live on the PART object and need no design open.** `get_parts <part>` works
