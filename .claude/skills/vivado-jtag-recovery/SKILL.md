@@ -16,6 +16,41 @@ Safe teardown + recovery for a stuck JTAG toolchain (`hw_server` + Vivado Hardwa
 `hw_server` mid-operation can leave the USB-JTAG cable in a state that needs a physical replug to
 clear, and a board power-cycle alone does not always clear that.
 
+## "No matching targets found on connected servers: localhost"
+
+This message means hw_server ran and Vivado connected to it — it does NOT mean hw_server is
+missing, blocked, or crashed. It means the server has no *claimable* cable. Diagnose in this order
+before concluding anything about hw_server itself:
+
+1. **Prove hw_server actually runs** — launch it standalone (`hw_server -s tcp::3121`). If it prints
+   "hw_server application started", the executable is fine and the problem is downstream. Skipping
+   this step is how a driver problem gets misdiagnosed as an endpoint-security block.
+2. **Check the cable is enumerated at all.** On Windows the USB registry subtree is authoritative
+   and readable without admin:
+   `reg query HKLM\SYSTEM\CurrentControlSet\Enum\USB /s` — AMD/Xilinx cables are `VID_03FD`
+   (PID_0008 = Platform Cable USB, PID_0013 = Platform Cable USB II); Digilent/FTDI-based cables are
+   `VID_0403`. (`&` in a device path is a cmd command separator — query the parent subtree and grep,
+   rather than fighting the escaping.)
+3. **Check a driver is actually BOUND to it.** This is the one that catches people: a cable can be
+   physically present and fully enumerated while having no driver. In the device's registry key look
+   for a `Service`/`Driver` value and at `ConfigFlags` — **`ConfigFlags = 0x40` is
+   `CONFIGFLAG_FAILEDINSTALL`**, i.e. Windows tried to install a driver for this device and failed.
+   No `Service` value + `ConfigFlags 0x40` = the cable will never appear as a target no matter what
+   you do to hw_server.
+4. **Fix:** run the cable-driver installer that ships with the tool
+   (`<install>/data/xicom/cable_drivers/nt64/install_drivers.cmd`) **as Administrator**. In a
+   locked-down corporate environment this is frequently the real blocker — driver installation
+   requires admin, which is a different permission from "may I run this executable."
+5. **If admin is genuinely unavailable**, the driver only has to exist on the machine physically
+   holding the cable: run `hw_server` on a machine where you do have admin and connect remotely with
+   `connect_hw_server -url <host>:3121`. A network JTAG module (SmartLynq-class) avoids host USB
+   drivers entirely. Third-party programmers (openFPGALoader, xc3sprog) do NOT avoid this — they
+   still need a USB driver bound (usually WinUSB via Zadig), so they hit the same admin wall.
+
+Note the Digilent DLL warnings hw_server prints on startup (`cannot open library dpcomm.dll` /
+`djtg.dll`, error 0x7e) are about *Digilent* cable support only — they are expected and harmless
+when using an AMD/Xilinx-branded cable, and are not the cause of a missing target.
+
 ## Diagnose first (don't kill blindly)
 
 - Check for another Hardware Manager session (a second Vivado GUI, `vivado_lab`, or a CI job) or an
