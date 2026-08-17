@@ -50,16 +50,18 @@ nothing fails; it is simply twice the size it needs to be. Synthesis will not
 generally rescue you, because the zeros arrive through registers it cannot prove
 are constant.
 
-Measured on one real design (43-tap halfband, 4 outputs/clock, 20-bit
-coefficients):
+Measured on one real design — a halfband whose even-phase sub-filter is `T` taps,
+producing `P` outputs per clock, 20-bit coefficients, on an UltraScale part.
+With `T = 22`, `P = 4`:
 
-| implementation | multiplies/clock | DSP |
+| implementation | multiplies/clock | DSP48E2 |
 |---|---|---|
-| I and Q through both branches | 22 × 4 × 2 = 176 | 172 |
-| + fast-IQ (drop the ×0 paths) | 22 × 4 = 88 | — |
-| + fold the symmetric FIR | 11 × 4 = 44 | **44** |
+| I and Q through both branches | `T·P·2` = 176 | 172 |
+| + fast-IQ (drop the ×0 paths) | `T·P` = 88 | — |
+| + fold the symmetric FIR | `(T/2)·P` = 44 | **44** |
 
-**3.9× fewer multipliers, bit-exact.**
+**3.9× fewer multipliers, bit-exact.** The reduction is structural — `4×` in the
+limit — so it carries to any `T` and `P`, not just these.
 
 ## Stacking with coefficient symmetry
 

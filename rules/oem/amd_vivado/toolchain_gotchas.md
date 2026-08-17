@@ -89,8 +89,10 @@ assuming RTL/firmware is wrong.
   ```
   ERROR: [IP_Flow 19-3488] Validation failed for parameter
   'Input Sampling Frequency (MHz)(Sample_Frequency)' ...
-  Value '1440' is out of the range (0.000001,371.0)
+  Value '<requested>' is out of the range (0.000001,371.0)
   ```
+  So a design ingesting several hundred MSps or more cannot use this IP at that
+  stage, however the parallelism is arranged.
 - **An IP cannot exploit structure it has not been told about.** A generic FIR
   fed complex data filters both components fully; it has no way to know that one
   component is identically zero by construction (e.g. after an fs/4 mixer, where
