@@ -54,6 +54,13 @@ assuming RTL/firmware is wrong.
 - Vivado's own console output in batch mode can be lost on abnormal process exit. A build script
   that needs a durable log should append progress markers to a file with explicit flushing, rather
   than relying solely on captured stdout.
+- **Run every build in the BACKGROUND, redirected to a log — never as a blocking foreground call.**
+  Even a trivial design on a large part (a handful of LUTs on an XCKU115) takes many minutes: Vivado
+  spends most of that loading the device database and running the full opt/place/route flow, so
+  build time tracks the PART's size far more than the DESIGN's. An agent/tool call with a typical
+  1–2 minute timeout will be killed mid-synthesis. Launch it detached, then poll the log for the
+  script's own progress markers. (Killing a synthesis/implementation run is safe — no board or JTAG
+  cable is involved. Killing a `program_hw_devices` is NOT; see `vivado-jtag-recovery`.)
 
 See also: `.claude/agents/vivado-build.md` (the timing-gate discipline), `.claude/skills/
 vitis-hls-kernel-authoring/` (Vitis HLS pragma reference), `.claude/skills/vivado-ila-vio-probe/`
