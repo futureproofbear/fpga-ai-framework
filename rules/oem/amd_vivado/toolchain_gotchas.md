@@ -62,6 +62,28 @@ assuming RTL/firmware is wrong.
   script's own progress markers. (Killing a synthesis/implementation run is safe — no board or JTAG
   cable is involved. Killing a `program_hw_devices` is NOT; see `vivado-jtag-recovery`.)
 
+## Asking what a part actually contains
+
+- **Resource counts live on the PART object and need no design open.** `get_parts <part>` works
+  seconds after Vivado starts, and `list_property [get_parts <part>]` enumerates everything it
+  knows. Verified on `xcku115-flvb2104-2-e` (Vivado 2023.2, `-mode batch`): `DSP = 5520`,
+  `BLOCK_RAMS = 2160`, `SLICES = 82920`, `FLIPFLOPS = 1326720`, `LUT_ELEMENTS = 663360`,
+  `MMCM = 24`, `SLRS = 2`, `AVAILABLE_IOBS = 702`, `IDCODE = 0x0390d093`, the part's full legal
+  `IO_STANDARDS` list, and `COMPATIBLE_PARTS` (every other device that fits the same footprint —
+  the authoritative answer to "what else could this board have been populated with"). Reach for
+  this BEFORE `link_design` + `get_sites`, which loads the entire device database and takes minutes
+  on a large part.
+- **Transceiver properties are named after the PRIMITIVE generation, and absence is the answer.**
+  The same part reports `GB_TRANSCEIVERS = 64` and `GTHE3_TRANSCEIVERS = 64` and carries NO `GTY*`
+  property whatsoever — a part with zero of a transceiver type simply has no property for it, so
+  `list_property` is the fastest way to establish which types physically exist on a part.
+- **A wildcard `SITE_TYPE` count is not a resource count.** `get_sites -filter {SITE_TYPE =~ *GTH*}`
+  returns 80 on this part, but that is 64 `GTHE3_CHANNEL` sites PLUS 16 `GTHE3_COMMON` sites — one
+  COMMON (the quad's shared PLL/refclk block) per quad of four channels. Quoting 80 as "80
+  transceivers" overstates the part by 25%. The same trap applies to any wildcard over a site type
+  that has a per-group companion site. Filter on the exact type you mean
+  (`{SITE_TYPE == GTHE3_CHANNEL}`), or use the part property.
+
 See also: `.claude/agents/vivado-build.md` (the timing-gate discipline), `.claude/skills/
 vitis-hls-kernel-authoring/` (Vitis HLS pragma reference), `.claude/skills/vivado-ila-vio-probe/`
 and `.claude/skills/vivado-iso-test-harness/` (the debug workflows these quirks most often bite),

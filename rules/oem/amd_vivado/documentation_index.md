@@ -34,7 +34,9 @@ result happens to hand you a khub ID.
 
 **GTH vs GTY is a real trap**, not a naming detail: they are different primitives in different
 documents, and a board schematic may label a net `GTY_*` on a part that has no GTY at all. Verify
-against the part (`get_sites -filter {SITE_TYPE =~ *GTY*}`) before choosing which UG to read — see
+against the part — `list_property [get_parts <part>]`, where a missing `GTY*`/`GTHE3_TRANSCEIVERS`
+property means the part has none of that type, and which needs no design open — before choosing
+which UG to read — see
 `rules/target/amd/kintex_ultrascale/transceiver_rules.md` for a confirmed case of exactly this.
 
 ## Datasheets (the numbers, per family)
@@ -74,6 +76,12 @@ take the newest versioned path from the result.
 
 ## Discipline
 
+- **Verify the extraction, not just the document.** These are big, multi-column PDFs; a text
+  extractor can hand back a table whose values sit against the wrong row labels, with no warning.
+  Cross-check anything quoted from an extracted table against a tool-derived ground truth (a part
+  property, `get_package_pins`) before acting on it — see
+  `rules/generic/reference-first-verification.md`, "The extracted copy of a reference is not the
+  reference," for a worked case where the naive read inverted a part's GTH and GTY counts.
 - **Quote the version.** These documents revise (DS892 was at v1.20 in Aug 2025; UG573 at rev 1.14
   in Nov 2025). A protocol/parameter fact cited without its document revision is not verifiable
   later — record doc number, revision, and section.
