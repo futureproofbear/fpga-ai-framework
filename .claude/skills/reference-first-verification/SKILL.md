@@ -34,6 +34,10 @@ design or a fix.** This skill makes that a repeatable gate instead of a one-off 
    control pin, state how the testbench drives it versus how the project ties it, and whether it
    even reaches the built configuration. Flag floating inputs, mis-tied pins, clock-ratio
    violations, and handshake-timing or pipeline-latency mismatches.
+   ⚠️ If a quoted number came out of a PDF via a text extractor, verify the EXTRACTION before
+   trusting the number — a multi-column table can silently emit true values against the wrong row
+   labels. See `rules/generic/reference-first-verification.md`, "The extracted copy of a reference
+   is not the reference," for the mechanism and a worked case.
 4. **Corroborate ambiguous points.** For high-stakes or ambiguous protocol facts, check the vendor's
    own site and its official support/community forum, and state your confidence.
 5. **Produce a verdict:** the true built configuration, the reference protocol (quoted), a pin/
