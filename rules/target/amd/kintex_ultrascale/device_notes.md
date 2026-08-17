@@ -23,12 +23,15 @@ fact (or a UltraScale+-targeted IP/example design) applies here without checking
   explicit pipelining/floorplanning attention; read UG949's SSI section before laying out a design
   that spans the device, and don't carry timing intuition from a monolithic part over to this one.
 - **Do not take the FPGA description printed in a multi-populate board's schematic title block as a
-  description of YOUR part.** On the HTG-830 the title block reads "FPGA, Virtex UltraScale, 52 HR,
-  650 HP, 36 GTY, 40 GTH / XCVU160-FFVB2104" on every sheet — that is the Virtex populate option's
-  device, not the XCKU115 actually fitted, and its GTY/GTH counts do not describe this part at all.
-  (An earlier revision of this file quoted a "104 HR, 520 HP, 48 GTH" description for this part;
-  that string appears nowhere in the schematic or the board UG and its GTH figure is contradicted by
-  the part property above — it has been removed rather than left as an unverifiable claim.)
+  description of YOUR part.** A carrier board drawn for several populate options typically carries
+  ONE device description in the title block of every sheet — on the HTG-830 that description is a
+  **Virtex UltraScale** part, complete with its own I/O-bank and GTY/GTH counts, not the Kintex
+  XCKU115 actually fitted. Those counts describe a different device and do not apply. Read the
+  populated part's resources from the part object instead (above); the title block is documentation
+  of the footprint's *family*, not of what is soldered down.
+  (An earlier revision of this file carried an I/O-bank-and-GTH description attributed to this part
+  which appears in neither the schematic nor the board UG, and whose GTH figure is contradicted by
+  the part property above — removed rather than left as an unverifiable claim.)
 
 ## DSP48E2 (shared with UltraScale+, NOT shared with Versal's DSP58)
 

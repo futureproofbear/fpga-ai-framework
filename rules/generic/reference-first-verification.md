@@ -26,17 +26,18 @@ extraction is lossy in ways that are SILENT, and it produces output that reads a
   slightly different baselines (common when the header row's part names share a baseline with the
   first row's label), every value lands against a neighbouring label. Nothing warns you — the output
   is a well-formed table of true numbers against wrong labels.
-  Worked example (HTG-830 UG Rev2.0 Table (1), `pdftotext -layout`, verified 2026-08): the extracted
-  rows read `GTH 16 Gb/s Transceivers ... 0` and `GTY 30.5 Gb/s Transceivers ... 64` in the XCKU115
-  column. That part in fact has **64 GTH and zero GTY** (`get_property GTHE3_TRANSCEIVERS [get_parts
-  xcku115-flvb2104-2-e]` = 64; the part carries no GTY property at all). Every value in the
-  extraction was shifted up by exactly one row, so a naive read INVERTS GTH and GTY — and would have
-  "corroborated" the board schematic's misleading `GTY_*` net names.
+  Worked example (`pdftotext -layout` on a board vendor's FPGA-comparison table, verified 2026-08):
+  every value in the extracted table sat one row above its correct label, so the transceiver rows
+  came out **with the GTH and GTY counts swapped** for the part in question. Taken at face value that
+  reverses which transceiver type the device has — and it would have appeared to "corroborate" the
+  same board's misleading `GTY_*` net names. The tool disagrees and the tool is right:
+  `get_property GTHE3_TRANSCEIVERS [get_parts <part>]` returns the real count, and the absence of any
+  `GTY*` property is itself the answer.
 - **The offset is detectable, and it is uniform.** Check any two rows against a known-good source:
-  in the same extraction the `DSP Slices` label carried 75.9 (the block-RAM megabit figure) while
-  the part reports DSP = 5,520 — the value on the row below. A trailing orphan row with values but
-  no label (here `1.0 - 3.3V`) is a strong tell that the whole column is off by one. Once one row is
-  proven shifted, treat EVERY row of that table as corrupted, not just the one you caught.
+  in the same extraction the DSP-slice label carried the block-RAM megabit figure, while the part
+  object reported a DSP count matching the row *below* it. A trailing orphan row carrying values but
+  no label is a strong tell that the whole column is off by one. Once one row is proven shifted,
+  treat EVERY row of that table as corrupted, not just the one you caught.
 - **Derived vendor exports drop characters as readily as PDFs misplace them.** A board pinout `.txt`
   used to generate constraints in one project truncated every differential clock net name to its
   base, dropping the trailing `_N`/`_P` — recoverable only by inferring the file's own pin-ordering

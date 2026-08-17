@@ -20,7 +20,7 @@ names (e.g. `GTY_*`, a "Z-RAY" or similar GTY-only high-speed connector) do not 
 option — so a schematic net labeled `GTY_...` is not proof that pin is a live GTY connection on
 every populated part.
 
-**Confirmed on this project (HTG-830 / HTG-VKUS-PCIE board, populated with XCKU115-FLVB2104-2-E):**
+**Confirmed on this project (a HiTech Global HTG-830 carrier populated with XCKU115-FLVB2104-2-E):**
 of 84 pins wired to the board's Z-RAY connector + "free" GTY reference-clock nets, 54 report
 `PIN_FUNC == NC` (No Connect) when queried against the actual populated part via
 `get_package_pins`/`get_property PIN_FUNC` — including 3 of the Z-RAY connector's 4 lanes (B, C, D)
