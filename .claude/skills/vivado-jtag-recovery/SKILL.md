@@ -37,10 +37,40 @@ before concluding anything about hw_server itself:
    `CONFIGFLAG_FAILEDINSTALL`**, i.e. Windows tried to install a driver for this device and failed.
    No `Service` value + `ConfigFlags 0x40` = the cable will never appear as a target no matter what
    you do to hw_server.
-4. **Fix:** run the cable-driver installer that ships with the tool
-   (`<install>/data/xicom/cable_drivers/nt64/install_drivers.cmd`) **as Administrator**. In a
-   locked-down corporate environment this is frequently the real blocker — driver installation
-   requires admin, which is a different permission from "may I run this executable."
+4. **Fix:** install the cable driver **as Administrator**. In a locked-down corporate environment
+   this is frequently the real blocker — driver installation requires admin, which is a different
+   permission from "may I run this executable."
+   - The vendor wrapper is `<install>/data/xicom/cable_drivers/nt64/install_drivers.cmd`, but it is
+     fragile: it `cd`s into subdirectories and calls `check_windrvr6.exe` (a legacy-Jungo-driver
+     check), and **when that call fails for ANY reason it reports "ERROR: Must have admin
+     privileges"** — a misleading message that has nothing to do with privileges. Don't trust that
+     string; verify elevation independently.
+   - The wrapper's legacy step is only needed to remove the old Jungo `windrvr6` driver. If
+     `windrvr6` is not an installed service (check
+     `HKLM\SYSTEM\CurrentControlSet\Services\windrvr6`), skip the wrapper and install the INF
+     directly — this is all the modern path does:
+     ```
+     pnputil.exe -i -a "<install>\data\xicom\cable_drivers\nt64\dlc10_win10\xpcwinusb.inf"
+     pnputil.exe /scan-devices
+     ```
+     Success looks like `Published name: oemNNN.inf`, provider "Xilinx, Inc.", class "Programming
+     cables".
+   - **Then confirm the device actually re-bound**, because adding a package to the driver store is
+     not the same as binding it: re-read the device key and require `ConfigFlags` to have gone
+     `0x40 -> 0x0` and a `Service` value to exist (`WINUSB` for this driver). If it hasn't rebound,
+     physically replug the cable — Windows does not always retry a device it previously marked
+     failed.
+   - Platform Cable USB II enumerates as **PID_0013 ("Firmware Loader") before firmware download and
+     PID_0008 ("Xilinx USB Cable") after**. Seeing PID_0013 is NOT itself evidence of a problem —
+     hw_server downloads the firmware when it opens the cable. Judge by `Service`/`ConfigFlags` and
+     by whether `get_hw_targets` returns something, not by the PID.
+
+   ⚠️ **Windows shell caveat when driving any of this from git-bash/MSYS:** MSYS rewrites arguments
+   that begin with `/` into Windows paths, so `pnputil /add-driver ... /install` arrives corrupted
+   and fails with a misleading "Missing or invalid driver package specified." Use the legacy `-i -a`
+   flags (which start with `-` and survive), or set `MSYS_NO_PATHCONV=1` — but note that also stops
+   `//c` being converted to `/c`, so switch to `cmd /c` if you do. Escaped inner quotes (`\"`) inside
+   a `cmd //c "..."` string are another silent corrupter; build paths in a shell variable instead.
 5. **If admin is genuinely unavailable**, the driver only has to exist on the machine physically
    holding the cable: run `hw_server` on a machine where you do have admin and connect remotely with
    `connect_hw_server -url <host>:3121`. A network JTAG module (SmartLynq-class) avoids host USB
